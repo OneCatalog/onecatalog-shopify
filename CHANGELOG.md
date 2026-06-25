@@ -5,6 +5,18 @@
 
 ## [Не выпущено] — бэклог
 
+### Реализовано на `dev` — пикер + страница импорта + степпер (версия 0.4.0)
+- **`app/picker.client.js`** — пикер OneCatalog (§2.4 v1.2) для embedded-приложения:
+  `parentOrigin = window.location.origin`, доверие по `event.source`, разбор JSON-строки,
+  своя × + Esc. Импорт по `productPublicIds` (порт OpenCart).
+- **`app/routes/app.import.jsx`** — Polaris-страница: «Select products» (пикер) + поле
+  списка public_id + прогресс-бар, сводка (created/updated/errors), отмена, persist
+  `localStorage`. Степпер режет на порции по «шагу» и шлёт на сервер-экшен.
+- **`app/routes/api.import.jsx`** — сервер-экшен: `authenticate.admin`, импорт порции через
+  `importByPublicId`, запись в `ImportLog`, JSON `{results, log}`.
+- ✅ Импорт кликается end-to-end в админке Shopify (на dev-store).
+
+
 ### Реализовано на `dev` — медиа (версия 0.3.0)
 - **`app/services/media.mjs`** — выбор размера (с токеном→max), контент-ключ
   `sha1(path#size)`; офлайн-тест `tests/media-test.mjs`.
