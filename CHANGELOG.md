@@ -5,6 +5,22 @@
 
 ## [Не выпущено] — бэклог
 
+### Реализовано на `dev` — §13 синхронизация цен и остатков (B2B) (версия 0.6.0)
+- **`app/services/pricestock.mjs`** — чистые резолверы (стратегия min/priority/supplier ×
+  приоритет регионов, promo<base→скидка, сумма остатков, коды, сигнатура). Офлайн-тест
+  `tests/pricestock-test.mjs` (13 проверок).
+- **`app/services/b2bapi.server.js`** — клиент B2B-фида (url_key в пути + private_key в query).
+- **`app/services/b2bsync.server.js`** — **scan-and-diff** (§13.4): префетч
+  `public_id→productGid` (`OneCatalogMap`) и сигнатур (`OneCatalogMeta`) одним запросом;
+  пишутся только изменившиеся. Цена/скидка → `productVariantsBulkUpdate`
+  (price=скидка, compareAtPrice=база), остаток → `inventorySetQuantities` (primary location).
+  Сигнатуры/коды → `OneCatalogMeta`.
+- **`app/routes/app.b2b.jsx`** + **`api.sync.jsx`** — страница «Prices & stock» с браузерным
+  степпером (прогресс + сводка изменено/без изменений/нет в каталоге). B2B-настройки — на
+  странице Settings (0.5.0).
+- ✅ Оба сценария стандарта (импорт §1–§12 + цены/остатки §13) на месте.
+
+
 ### Реализовано на `dev` — справочные сущности + настройки (версия 0.5.0)
 - **`importer.referenceData` / applyReferences**: бренд → нативный **`vendor`**, теги →
   нативные **product tags** (в input `productCreate`/`productUpdate`), страна → metafield
