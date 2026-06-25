@@ -1,0 +1,21 @@
+# История изменений — OneCatalog Import (Shopify app)
+
+Формат: [Keep a Changelog](https://keepachangelog.com/ru/1.0.0/), версии — [SemVer](https://semver.org/lang/ru/).
+Соответствие стандарту интеграции: **v1.3**. Стек: **Remix + Admin GraphQL** (Shopify public app).
+
+## [Не выпущено] — бэклог
+
+### Дизайн (до кода)
+- `docs/integration-plan.md` — архитектура Shopify-приложения и маппинг под Admin GraphQL.
+- `docs/integration-answers.md` — решения (биллинг/хранилище/категории/локация/хостинг).
+
+### План инкрементов (на `dev`) — паритет = OpenCart 0.7.0 по функциям
+- 0.1.0 — каркас Remix-приложения (shopify.app.toml, shopify.server, prisma, auth, routes).
+- 0.2.0 — ядро импорта (Admin GraphQL productSet + metafield/map идемпотентность).
+- 0.3.0 — медиа (productCreateMedia по URL + сигнатура).
+- 0.4.0 — пикер + страница импорта + степпер + UX.
+- 0.5.0 — справочные сущности (vendor/tags/collection/metafields), off by default.
+- 0.6.0 — §13 B2B (price/compareAtPrice/inventory, scan-and-diff).
+- 0.7.0 — журнал, вебхуки, README, точки расширения.
+
+> Распространение — через Shopify App Store (не zip). CI/деплой — `shopify app deploy`.
