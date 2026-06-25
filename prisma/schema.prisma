@@ -1,0 +1,67 @@
+// Хранилище сессий Shopify + служебные таблицы OneCatalog.
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Session {
+  id            String    @id
+  shop          String
+  state         String
+  isOnline      Boolean   @default(false)
+  scope         String?
+  expires       DateTime?
+  accessToken   String
+  userId        BigInt?
+  firstName     String?
+  lastName      String?
+  email         String?
+  accountOwner  Boolean   @default(false)
+  locale        String?
+  collaborator  Boolean?  @default(false)
+  emailVerified Boolean?  @default(false)
+}
+
+// §5.1 идемпотентность: public_id -> product GID (по магазину).
+model OneCatalogMap {
+  id         Int      @id @default(autoincrement())
+  shop       String
+  publicId   String
+  productGid String
+  @@unique([shop, publicId])
+  @@index([shop])
+}
+
+// §5.1 служебные значения (сигнатуры идемпотентности и т.п.) вне видимых полей товара.
+model OneCatalogMeta {
+  id        Int      @id @default(autoincrement())
+  shop      String
+  productGid String
+  metaKey   String
+  value     String?
+  @@unique([shop, productGid, metaKey])
+}
+
+// §7 настройки на магазин (токен Wiki, язык, шаг, B2B-ключи и т.д.).
+model Setting {
+  id    Int    @id @default(autoincrement())
+  shop  String
+  key   String
+  value String?
+  @@unique([shop, key])
+}
+
+// Журнал импорта (§5.5).
+model ImportLog {
+  id        Int      @id @default(autoincrement())
+  shop      String
+  publicId  String
+  status    String
+  message   String?
+  createdAt DateTime @default(now())
+  @@index([shop, createdAt])
+}

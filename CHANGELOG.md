@@ -5,6 +5,20 @@
 
 ## [Не выпущено] — бэклог
 
+### Реализовано на `dev` — каркас Remix-приложения (версия 0.1.0)
+- **Скелет Shopify public app** (по `shopify-app-template-remix`): `package.json`,
+  `shopify.app.toml` (scopes products/inventory/publications, вебхук app/uninstalled),
+  `vite.config.js`, `.env.example`.
+- **Auth/сессии**: `app/shopify.server.js` (`shopifyApp`, AppStore distribution,
+  Prisma session storage), `app/db.server.js`.
+- **Prisma-схема**: `Session` + служебные `OneCatalogMap` (идемпотентность public_id→GID),
+  `OneCatalogMeta` (сигнатуры вне товара, §5.1), `Setting` (настройки на магазин),
+  `ImportLog` (журнал, §5.5).
+- **Routes**: `_index` (лендинг), `auth.$`, `app` (AppProvider + NavMenu: Import /
+  Prices & stock / Import log), `app._index` (дашборд), `webhooks.app.uninstalled`.
+- ⚠️ Требует `npm install` + Shopify CLI + Partner-аккаунт для запуска (App Store-стек).
+
+
 ### Дизайн (до кода)
 - `docs/integration-plan.md` — архитектура Shopify-приложения и маппинг под Admin GraphQL.
 - `docs/integration-answers.md` — решения (биллинг/хранилище/категории/локация/хостинг).
