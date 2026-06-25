@@ -1,0 +1,14 @@
+import * as M from "../app/services/media.mjs";
+let fail = 0;
+const chk = (l, g, w) => { const ok = String(g) === String(w); console.log((ok?"  ok  ":"  FAIL ")+l); if(!ok) fail++; };
+const seg = (raw) => Buffer.from(raw, "utf8").toString("base64").replace(/\+/g,"-").replace(/\//g,"_");
+const u1 = "https://api/media_files/" + seg("max|images/foo/bar|TOK1") + ".S1";
+const u2 = "https://api/media_files/" + seg("max|images/foo/bar|TOK2") + ".S2";
+chk("fileKey stable across tokens", M.fileKey(u1), M.fileKey(u2));
+import { createHash } from "node:crypto";
+chk("fileKey = sha1(path#size)", M.fileKey(u1), createHash("sha1").update("images/foo/bar#max").digest("hex"));
+chk("pick token→max", M.pickSizeInfo({min:"a",middle:"b",max:"c"}, true).size, "max");
+chk("pick no-token→middle", M.pickSizeInfo({min:"a",middle:"b",max:"c"}, false).size, "middle");
+chk("rank max>middle", M.sizeRank("max") > M.sizeRank("middle") ? "1":"0", "1");
+console.log(fail===0 ? "\nALL PASS" : `\n${fail} FAILED`);
+process.exit(fail?1:0);

@@ -2,6 +2,7 @@
 // Идемпотентность по OneCatalogMap (shop+publicId→productGid, §5.1). Цена 0 и статус —
 // только при создании (§5.6). Характеристики → metafields; категории → custom collections.
 import * as Units from "./units.mjs";
+import * as Media from "./media.mjs";
 import { Api, getSettings } from "./api.server";
 
 async function gql(admin, query, variables) {
@@ -63,6 +64,7 @@ export async function importPayload({ admin, prisma, shop, cfg, payload, publicI
 
     await setMetafields(admin, gid, publicId, payload);
     await assignCollections(admin, gid, payload);
+    await applyMedia({ admin, prisma, shop, gid, payload, cfg });
 
     return { status: isNew ? "created" : "updated", publicId, gid };
   } catch (e) {
@@ -162,6 +164,63 @@ async function ensureCollection(admin, title) {
     { input: { title } }
   );
   return created?.collectionCreate?.collection?.id || null;
+}
+
+async function applyMedia({ admin, prisma, shop, gid, payload, cfg }) {
+  const hasToken = !!cfg.api_token;
+  const items = [];
+  const cover = payload.images_urls && typeof payload.images_urls === "object" ? payload.images_urls : null;
+  if (cover) {
+    const p = Media.pickSizeInfo(cover, hasToken);
+    if (p.url) items.push({ url: p.url, size: p.size, key: "cover" });
+  }
+  for (const f of payload.files || []) {
+    if (!f || typeof f !== "object") continue;
+    const c = String(f.category || "");
+    if (c && c !== "images") continue;
+    const p = Media.pickSizeInfo(f.urls && typeof f.urls === "object" ? f.urls : {}, hasToken);
+    if (!p.url) continue;
+    items.push({ url: p.url, size: p.size, key: String(f.name || Media.fileKey(p.url) || p.url), alt: f.alt });
+  }
+  if (!items.length) return;
+
+  const sig = items.map((it) => `${it.key}:${it.size}`).join("|");
+  const prior = await metaGet(prisma, shop, gid, "media_sig");
+  if (prior === sig) return; // набор не изменился и качество не лучше
+
+  const media = items.map((it) => ({
+    originalSource: it.url,
+    mediaContentType: "IMAGE",
+    alt: it.alt ? String(it.alt) : undefined,
+  }));
+  // Shopify сам скачивает по URL; добавляем порциями (≤ нескольких десятков).
+  for (let i = 0; i < media.length; i += 20) {
+    await gql(
+      admin,
+      `mutation oc_media($productId: ID!, $media: [CreateMediaInput!]!) {
+        productCreateMedia(productId: $productId, media: $media) {
+          media { ... on MediaImage { id } } mediaUserErrors { field message }
+        }
+      }`,
+      { productId: gid, media: media.slice(i, i + 20) }
+    );
+  }
+  await metaSet(prisma, shop, gid, "media_sig", sig);
+}
+
+async function metaGet(prisma, shop, productGid, metaKey) {
+  const row = await prisma.oneCatalogMeta.findUnique({
+    where: { shop_productGid_metaKey: { shop, productGid, metaKey } },
+  });
+  return row?.value ?? "";
+}
+
+async function metaSet(prisma, shop, productGid, metaKey, value) {
+  await prisma.oneCatalogMeta.upsert({
+    where: { shop_productGid_metaKey: { shop, productGid, metaKey } },
+    update: { value },
+    create: { shop, productGid, metaKey, value },
+  });
 }
 
 function resolveDimensions(payload) {
