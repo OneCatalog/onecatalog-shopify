@@ -5,6 +5,18 @@
 
 ## [Не выпущено] — бэклог
 
+### Реализовано на `dev` — журнал импорта + доки (версия 0.7.0)
+- **`app/routes/app.log.jsx`** — страница «Import log» (Polaris DataTable из `ImportLog`,
+  последние 200: время/public_id/статус/сообщение).
+- **`docs/EVENTS.md`** — поверхность расширения: метаполя `onecatalog.*` (public_id,
+  country, collection, spec_*) + нативные vendor/tags/collections/инвентарь; scan-and-diff
+  для B2B. Чтение в теме (Liquid).
+- **README** расширен: возможности, запуск (`shopify app dev` + Partner/dev-store),
+  распространение через App Store (`shopify app deploy`, не zip), scopes, структура, тесты.
+- ✅ **Функциональный паритет с OpenCart-портом достигнут** (импорт §1–§12 + B2B §13 + UX +
+  справочные сущности + журнал + точки расширения). Соответствие стандарту v1.3.
+
+
 ### Реализовано на `dev` — §13 синхронизация цен и остатков (B2B) (версия 0.6.0)
 - **`app/services/pricestock.mjs`** — чистые резолверы (стратегия min/priority/supplier ×
   приоритет регионов, promo<base→скидка, сумма остатков, коды, сигнатура). Офлайн-тест
