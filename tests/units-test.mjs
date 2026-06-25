@@ -1,0 +1,11 @@
+import * as U from "../app/services/units.mjs";
+let fail = 0;
+const chk = (l, g, w) => { const ok = Math.abs(Number(g) - Number(w)) < 0.0001; console.log((ok?"  ok  ":"  FAIL ")+l); if(!ok) fail++; };
+chk("1000g→kg", U.weight(1000,"kg"), 1);
+chk("1200mm→cm", U.length(1200,"cm"), 120);
+chk("25.4mm→in", U.length(25.4,"in"), 1);
+chk("unknown weight unit→passthrough", U.weight(750,"???"), 750);
+chk("2kg→2000g base", U.toBaseWeight(2,"kg"), 2000);
+chk("120cm→1200mm base", U.toBaseLength(120,"cm"), 1200);
+console.log(fail===0 ? "\nALL PASS" : `\n${fail} FAILED`);
+process.exit(fail?1:0);

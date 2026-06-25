@@ -5,6 +5,20 @@
 
 ## [Не выпущено] — бэклог
 
+### Реализовано на `dev` — ядро импорта одного товара (версия 0.2.0)
+- **`app/services/units.mjs`** — конвертер единиц (чистый ESM), офлайн-тест
+  `tests/units-test.mjs`.
+- **`app/services/api.server.js`** — клиент Wiki API (`X-API-Key`, `lang`, `{success,data}`)
+  + `getSettings(prisma, shop)` (настройки на магазин с дефолтами).
+- **`app/services/importer.server.js`** — импорт одного товара через **Admin GraphQL**:
+  идемпотентность по `OneCatalogMap` (shop+publicId→productGid, §5.1); создание
+  `productCreate` / обновление `productUpdate`; `sku←article`, вес → вариант
+  (`inventoryItem.measurement`), **цена 0 и статус — только при создании** (§5.6);
+  `public_id` и характеристики → **metafields** (namespace `onecatalog`); категории →
+  custom collections find-or-create (`collectionAddProducts`). Ошибки → отчёт, не падаем.
+- ⚠️ Запуск/тест — на dev-store (нужен npm install + Shopify CLI); здесь — синтаксис + офлайн-тесты.
+
+
 ### Реализовано на `dev` — каркас Remix-приложения (версия 0.1.0)
 - **Скелет Shopify public app** (по `shopify-app-template-remix`): `package.json`,
   `shopify.app.toml` (scopes products/inventory/publications, вебхук app/uninstalled),
