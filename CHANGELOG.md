@@ -5,6 +5,16 @@
 
 ## [Не выпущено] — бэклог
 
+### Реализовано на `dev` — справочные сущности + настройки (версия 0.5.0)
+- **`importer.referenceData` / applyReferences**: бренд → нативный **`vendor`**, теги →
+  нативные **product tags** (в input `productCreate`/`productUpdate`), страна → metafield
+  `onecatalog.country`, коллекции → custom collection ИЛИ metafield `onecatalog.collection`
+  (выбор цели). Все **по умолчанию выключены** (§3/§7), нативное прежде своего.
+- **`app/routes/app.settings.jsx`** — Polaris-страница настроек (Wiki: база/токен/язык/шаг/
+  статус/origin пикера; тумблеры справочных + цель коллекций; B2B-ключи/стратегия/приоритеты)
+  с сохранением в Prisma `Setting` на магазин. Пункт «Settings» в NavMenu.
+
+
 ### Реализовано на `dev` — пикер + страница импорта + степпер (версия 0.4.0)
 - **`app/picker.client.js`** — пикер OneCatalog (§2.4 v1.2) для embedded-приложения:
   `parentOrigin = window.location.origin`, доверие по `event.source`, разбор JSON-строки,

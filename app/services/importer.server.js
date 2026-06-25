@@ -27,6 +27,7 @@ export async function importPayload({ admin, prisma, shop, cfg, payload, publicI
   const description = String(payload.description_text ?? payload.description ?? "");
   const article = String(payload.article ?? "").trim();
   const dim = resolveDimensions(payload);
+  const refs = referenceData(payload, cfg); // §3/§7 справочные сущности (по умолчанию выкл)
 
   try {
     const existing = await prisma.oneCatalogMap.findUnique({
@@ -43,7 +44,13 @@ export async function importPayload({ admin, prisma, shop, cfg, payload, publicI
         `mutation oc_create($input: ProductInput!) {
           productCreate(input: $input) { product { id variants(first: 1) { nodes { id } } } userErrors { field message } }
         }`,
-        { input: { title: name, descriptionHtml: description, status: cfg.new_active ? "ACTIVE" : "DRAFT" } }
+        { input: {
+            title: name,
+            descriptionHtml: description,
+            status: cfg.new_active ? "ACTIVE" : "DRAFT",
+            vendor: refs.vendor || undefined,
+            tags: refs.tags.length ? refs.tags : undefined,
+        } }
       );
       const err = data?.productCreate?.userErrors?.[0];
       if (err) return { status: "error", publicId, message: err.message };
@@ -57,13 +64,33 @@ export async function importPayload({ admin, prisma, shop, cfg, payload, publicI
         `mutation oc_update($input: ProductInput!) {
           productUpdate(input: $input) { userErrors { field message } }
         }`,
-        { input: { id: gid, title: name || undefined, descriptionHtml: description } }
+        { input: {
+            id: gid,
+            title: name || undefined,
+            descriptionHtml: description,
+            vendor: refs.vendor || undefined,
+            tags: refs.tags.length ? refs.tags : undefined,
+        } }
       );
       await updateVariant(admin, gid, null, article, dim, isNew);
     }
 
-    await setMetafields(admin, gid, publicId, payload);
+    await setMetafields(admin, gid, publicId, payload, refs);
     await assignCollections(admin, gid, payload);
+    if (refs.collections.length && refs.collectionTarget === "collection") {
+      for (const title of refs.collections) {
+        const cid = await ensureCollection(admin, title);
+        if (cid) {
+          await gql(
+            admin,
+            `mutation oc_addcol2($id: ID!, $productIds: [ID!]!) {
+              collectionAddProducts(id: $id, productIds: $productIds) { userErrors { field message } }
+            }`,
+            { id: cid, productIds: [gid] }
+          );
+        }
+      }
+    }
     await applyMedia({ admin, prisma, shop, gid, payload, cfg });
 
     return { status: isNew ? "created" : "updated", publicId, gid };
@@ -100,10 +127,16 @@ async function updateVariant(admin, productGid, variantId, article, dim, isNew) 
   );
 }
 
-async function setMetafields(admin, gid, publicId, payload) {
+async function setMetafields(admin, gid, publicId, payload, refs) {
   const metafields = [
     { ownerId: gid, namespace: "onecatalog", key: "public_id", type: "single_line_text_field", value: publicId },
   ];
+  if (refs?.country) {
+    metafields.push({ ownerId: gid, namespace: "onecatalog", key: "country", type: "single_line_text_field", value: refs.country });
+  }
+  if (refs?.collections?.length && refs.collectionTarget === "metafield") {
+    metafields.push({ ownerId: gid, namespace: "onecatalog", key: "collection", type: "single_line_text_field", value: refs.collections.join(", ") });
+  }
   for (const opt of payload.options || []) {
     if (!opt || typeof opt !== "object") continue;
     const label = String(opt.specification_label || "").trim();
@@ -242,4 +275,24 @@ function resolveDimensions(payload) {
 
 function slug(s) {
   return String(s).toLowerCase().replace(/[^a-z0-9]+/gi, "_").replace(/^_+|_+$/g, "") || "x";
+}
+
+// §3/§7 — справочные сущности по флагам настроек (по умолчанию выкл, нативное прежде своего).
+function referenceData(payload, cfg) {
+  const on = (k) => String(cfg?.[k]) === "1";
+  const names = (arr) => {
+    const out = [];
+    for (const x of arr || []) {
+      const n = String((x && typeof x === "object" ? (x.menutitle ?? x.name ?? x.title) : x) ?? "").trim();
+      if (n) out.push(n);
+    }
+    return [...new Set(out)];
+  };
+  return {
+    vendor: on("import_brand") ? String(payload.brand?.menutitle ?? payload.brand?.name ?? "").trim() : "",
+    tags: on("import_tags") ? names(payload.tags) : [],
+    country: on("import_country") ? String(payload.country?.menutitle ?? payload.country?.name ?? "").trim() : "",
+    collections: on("import_collections") ? names(payload.collections) : [],
+    collectionTarget: (cfg?.collection_target === "collection") ? "collection" : "metafield",
+  };
 }

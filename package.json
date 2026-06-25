@@ -1,7 +1,7 @@
 {
   "name": "onecatalog-shopify",
   "private": true,
-  "version": "0.4.0",
+  "version": "0.5.0",
   "description": "OneCatalog catalog import + B2B sync — Shopify public app (Remix)",
   "license": "MIT",
   "scripts": {
